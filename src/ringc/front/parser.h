@@ -45,6 +45,8 @@ protected:
 	ExprIf* parseExprIf();
 	ExprIdent* parseExprIdent();
 	ExprLiteral* parseExprLiteral();
+	ExprLiteralBasic* parseExprLiteralBasic();
+	ExprLiteralArray* parseExprLiteralArray();
 	Expr* parseExprGroup();
 	Expr* parseExprPrimary();
 	Expr* parseExprLeftHandSide();
@@ -65,6 +67,7 @@ protected:
 	Expr* parseExprAssignment();
 
 	TypeId parseType();
+	TypeId parseArrayType();
 	pair<TypeId, vector<Ident> > parseFunctionType(bool parse_arg_names);
 	vector<Expr*> parseArguments();
 

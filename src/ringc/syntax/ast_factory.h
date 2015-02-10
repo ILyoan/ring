@@ -31,7 +31,8 @@ public:
 	ExprFn* createExprFn(TypeId type_id, const vector<Ident>& args, ExprBlock* body);
 	ExprIf* createExprIf(Expr* test, Expr* con, Expr* alt);
 	ExprIdent* createExprIdent(Ident id);
-	ExprLiteral* createExprLiteral(LiteralType lit_type, StrId str_id);
+	ExprLiteralBasic* createExprLiteralBasic(StrId str_id);
+	ExprLiteralArray* createExprLiteralArray(const vector<Expr*>& arr);
 	ExprMember* createExprMember(Expr* object, Property property);
 	ExprCall* createExprCall(Expr* callee, const vector<Expr*>& args);
 	ExprUnary* createExprUnary(UnaryOp op, Expr* expr);
@@ -42,6 +43,7 @@ public:
 
 	TypeId getPrimTypeId(const PrimTypeKey& prim_type_key);
 	TypeId getFuncTypeId(const FuncTypeKey& func_type_key);
+	TypeId getArrayTypeId(const ArrayTypeKey& array_type_key);
 
 protected:
 	AstNode* assignNode(AstNode* node);

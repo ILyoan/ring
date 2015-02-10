@@ -10,6 +10,7 @@ using namespace ring::ringc::ast;
 namespace ring {
 namespace ringc {
 	typedef PrimitiveTypeType PrimTypeKey;
+	typedef TypeId ArrayTypeKey;
 	typedef pair<vector<TypeId>, TypeId> FuncTypeKey;
 	class TypeTable;
 }}
@@ -31,11 +32,14 @@ public:
 	Type* getType(TypeId type_id);
 	PrimitiveType* getPrimType(TypeId type_id);
 	FunctionType* getFuncType(TypeId type_id);
+	ArrayType* getArrayType(TypeId type_id);
 	TypeId getPrimTypeId(const PrimTypeKey& prim_type_key);
 	TypeId getFuncTypeId(const FuncTypeKey& func_type_key);
+	TypeId getArrayTypeId(const ArrayTypeKey& array_type_key);
 
 	bool isFuncType(TypeId type_id);
 	bool isPrimType(TypeId type_id);
+	bool isArrayType(TypeId type_id);
 
 protected:
 	TypeId addType(Type* type);
@@ -44,6 +48,7 @@ protected:
 	TableMap<TypeId, Type*> _type_table;
 	map<PrimTypeKey, TypeId> _prim_type_map;
 	map<FuncTypeKey, TypeId> _func_type_map;
+	map<ArrayTypeKey, TypeId> _array_type_map;
 };
 
 

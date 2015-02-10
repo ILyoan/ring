@@ -286,8 +286,14 @@ llvm::Value* TransIR::transExprIdent(ast::ExprIdent* ident) {
 
 // Translate literal expression.
 llvm::Value* TransIR::transExprLiteral(ast::ExprLiteral* lit) {
-	switch (lit->lit_type()) {
-		case ast::LIT_NUM: return getConstantInt(lit->str_id());
+	Type* ty = session()->type_table()->getType(lit->type_id());
+	if (lit->isBasic()) {
+		ExprLiteralBasic* basic_lit = static_cast<ExprLiteralBasic*>(lit);
+		if (ty->isInt()) {
+			return getConstantInt(basic_lit->str_id());
+		}
+	} else if (lit->isArray()) {
+
 	}
 	return NULL;
 }

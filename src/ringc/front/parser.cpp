@@ -209,8 +209,6 @@ ExprBlock* Parser::parseExprBlock() {
 			eatType(Token::SEMICOLON);
 		}
 	}
-
-	// Eat '}' token.
 	eatType(Token::RBRACE);
 
 	return block;
@@ -276,9 +274,58 @@ ExprIdent* Parser::parseExprIdent() {
 
 ExprLiteral* Parser::parseExprLiteral() {
 	ScopeTracer tracer(_session, "parseExprLiteral()");
+	ExprLiteral* expr_lit = NULL;
+
+	if (isType(Token::LBRACKET)) {
+		expr_lit = parseExprLiteralArray();
+	} else if (TokenUtil::isLiteral(curr().type())) {
+		expr_lit = parseExprLiteralBasic();
+	} else {
+		EXPECTED("literal", curr().toString().c_str());
+	}
+	ASSERT_NE(expr_lit, NULL, SRCPOS);
+	if (maybeEatType(Token::COLON)) {
+		expr_lit->type_id(parseType());
+	}
+	return expr_lit;
+}
+
+
+// NOTE: The type of basic literal SHELL be set in parser.
+ExprLiteralBasic* Parser::parseExprLiteralBasic() {
+	ScopeTracer tracer(_session, "parseExprLiteralBasic()");
+	ASSERT(TokenUtil::isLiteral(curr().type()), SRCPOS);
 
 	Token lit = currAndEat();
-	return ast_fac()->createExprLiteral(convertLiteralType(lit.type()), lit.str_id());
+	ExprLiteralBasic* expr_lit = ast_fac()->createExprLiteralBasic(lit.str_id());
+	switch (lit.type()) {
+		case Token::LIT_FALSE:
+		case Token::LIT_TRUE:
+			expr_lit->type_id(ast_fac()->getPrimTypeId(PRIM_TYPE_BOOL));
+			break;
+		case Token::LIT_NUMERIC:
+			expr_lit->type_id(ast_fac()->getPrimTypeId(PRIM_TYPE_INT));
+			break;
+	}
+	return expr_lit;
+}
+
+
+ExprLiteralArray* Parser::parseExprLiteralArray() {
+	ScopeTracer tracer(_session, "parseExprLiteralArray()");
+	ASSERT(isType(Token::LBRACKET), SRCPOS);
+	eatType(Token::LBRACKET);
+	vector<Expr*> arr;
+	while (true) {
+		arr.push_back(parseExpr());
+		if (maybeEatType(Token::RBRACKET)) {
+			break;
+		}
+		if (!eatType(Token::COMMA)) {
+			break;
+		}
+	}
+	return ast_fac()->createExprLiteralArray(arr);
 }
 
 
@@ -306,7 +353,7 @@ Expr* Parser::parseExprPrimary() {
 
 	} else if (isType(Token::IDENT)) {
 		return parseExprIdent();
-	} else if (TokenUtil::isLiteral(curr().type())) {
+	} else if (isType(Token::LBRACKET) || TokenUtil::isLiteral(curr().type())) {
 		return parseExprLiteral();
 	} else if (isType(Token::LPAREN)) {
 		return parseExprGroup();
@@ -587,9 +634,13 @@ TypeId Parser::parseType() {
 
 	if (isType(Token::KEYWORD_FN)) {
 		return parseFunctionType(false).first;
+	} else if (isType(Token::LBRACKET)) {
+		return parseArrayType();
 	} else {
 		if (maybeEatType(Token::KEYWORD_TY_INT)) {
 			return ast_fac()->getPrimTypeId(PRIM_TYPE_INT);
+		} else if (maybeEatType(Token::KEYWORD_TY_BOOL)) {
+			return ast_fac()->getPrimTypeId(PRIM_TYPE_BOOL);
 		} else if (maybeEatType(Token::KEYWORD_TY_NIL)) {
 			return ast_fac()->getPrimTypeId(PRIM_TYPE_NIL);
 		} else {
@@ -645,6 +696,20 @@ pair<TypeId, vector<Ident> > Parser::parseFunctionType(bool parse_arg_names) {
 					make_pair(arg_types, ast_fac()->getPrimTypeId(PRIM_TYPE_NIL))),
 				arg_names);
 	}
+}
+
+
+TypeId Parser::parseArrayType() {
+	ScopeTracer tracer(_session, "parseArrayType()");
+
+	if (!eatType(Token::LBRACKET)) {
+		return TypeId();
+	}
+	if (!eatType(Token::RBRACKET)) {
+		return TypeId();
+	}
+	TypeId type_id = parseType();
+	return ast_fac()->getArrayTypeId(type_id);
 }
 
 

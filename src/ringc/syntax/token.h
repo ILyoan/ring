@@ -89,6 +89,7 @@ public:
 		KEYWORD_THEN,
 		KEYWORD_THIS,
 		KEYWORD_USE,
+		KEYWORD_TY_BOOL,
 		KEYWORD_TY_INT,
 		KEYWORD_TY_NIL,
 		// end of file

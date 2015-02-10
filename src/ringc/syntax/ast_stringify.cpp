@@ -91,18 +91,6 @@ string AstStringify::toString(UnaryOp op) {
 }
 
 
-string AstStringify::toString(LiteralType lit_type) {
-	switch (lit_type) {
-		case LIT_FALSE: return "false";
-		case LIT_TRUE: return "true";
-		case LIT_CHAR: return "char";
-		case LIT_STRING: return "string";
-		case LIT_NUM: return "num";
-	}
-	return "Unkown literal type";
-}
-
-
 string AstStringify::toString(PrimitiveTypeType prim_type) {
 	switch (prim_type) {
 		case PRIM_TYPE_NIL: return "nil";
@@ -128,6 +116,7 @@ string AstStringify::toString(Type* type) {
 	switch (type->type()) {
 		case TYPE_PRIMITIVE: return toString(static_cast<PrimitiveType*>(type));
 		case TYPE_FUNCTION:  return toString(static_cast<FunctionType*>(type));
+		case TYPE_ARRAY: return toString(static_cast<ArrayType*>(type));
 	}
 	return "Unknown type";
 }
@@ -149,6 +138,14 @@ string AstStringify::toString(FunctionType* type) {
 	});
 	res += ") -> ";
 	res += toString(type->ret());
+	return res;
+}
+
+
+string AstStringify::toString(ArrayType* type) {
+	string res = "";
+	res += "[] ";
+	res += toString(type->elem_type());
 	return res;
 }
 
@@ -223,10 +220,15 @@ string AstStringify::toString(ExprIdent* ident) {
 }
 
 
-string AstStringify::toString(ExprLiteral* literal) {
+string AstStringify::toString(ExprLiteral* lit) {
 	string body = "ExprLiteral ";
-	body += c_magenta + session()->str(literal->str_id()) + c_none;
-	return toStringExpr(literal, body);
+	if (lit->lit_type() == LIT_BASIC) {
+		ExprLiteralBasic* lit_basic = static_cast<ExprLiteralBasic*>(lit);
+		body += c_magenta + session()->str(lit_basic->str_id()) + c_none;
+	} else if (lit->lit_type() == LIT_ARRAY) {
+		body += c_magenta + "Array" + c_none;
+	}
+	return toStringExpr(lit, body);
 }
 
 

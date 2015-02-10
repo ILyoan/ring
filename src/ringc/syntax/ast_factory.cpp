@@ -60,8 +60,13 @@ ExprIdent* AstFactory::createExprIdent(Ident id) {
 }
 
 
-ExprLiteral* AstFactory::createExprLiteral(LiteralType lit_type, StrId str_id) {
-	return static_cast<ExprLiteral*>(assignNode(new ExprLiteral(lit_type, str_id)));
+ExprLiteralBasic* AstFactory::createExprLiteralBasic(StrId str_id) {
+	return static_cast<ExprLiteralBasic*>(assignNode(new ExprLiteralBasic(str_id)));
+}
+
+
+ExprLiteralArray* AstFactory::createExprLiteralArray(const vector<Expr*>& arr) {
+	return static_cast<ExprLiteralArray*>(assignNode(new ExprLiteralArray(arr)));
 }
 
 
@@ -107,4 +112,9 @@ TypeId AstFactory::getPrimTypeId(const PrimTypeKey& prim_type_key) {
 
 TypeId AstFactory::getFuncTypeId(const FuncTypeKey& func_type_key) {
 	return _session->type_table()->getFuncTypeId(func_type_key);
+}
+
+
+TypeId AstFactory::getArrayTypeId(const ArrayTypeKey& array_type_key) {
+	return _session->type_table()->getArrayTypeId(array_type_key);
 }

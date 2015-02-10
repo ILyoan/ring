@@ -33,6 +33,12 @@ FunctionType* TypeTable::getFuncType(TypeId type_id) {
 }
 
 
+ArrayType* TypeTable::getArrayType(TypeId type_id) {
+	ASSERT(isArrayType(type_id), SRCPOS);
+	return static_cast<ArrayType*>(getType(type_id));
+}
+
+
 TypeId TypeTable::getPrimTypeId(const PrimTypeKey& prim_type_key) {
 	if (_prim_type_map.count(prim_type_key) > 0) {
 		return _prim_type_map[prim_type_key];
@@ -55,6 +61,17 @@ TypeId TypeTable::getFuncTypeId(const FuncTypeKey& func_type_key) {
 }
 
 
+TypeId TypeTable::getArrayTypeId(const ArrayTypeKey& array_type_key) {
+	if (_array_type_map.count(array_type_key) > 0) {
+		return _array_type_map[array_type_key];
+	} else {
+		TypeId type_id = addType(new ArrayType(array_type_key));
+		_array_type_map[array_type_key] = type_id;
+		return type_id;
+	}
+}
+
+
 bool TypeTable::isPrimType(TypeId type_id) {
 	if (type_id.none()) {
 		return false;
@@ -71,6 +88,16 @@ bool TypeTable::isFuncType(TypeId type_id) {
 	} else {
 		ASSERT(type_id.value() >= 0 && type_id.value() < _type_table.length(), SRCPOS);
 		return _type_table.value(type_id)->isFunctionType();
+	}
+}
+
+
+bool TypeTable::isArrayType(TypeId type_id) {
+	if (type_id.none()) {
+		return false;
+	} else {
+		ASSERT(type_id.value() >= 0 && type_id.value() < _type_table.length(), SRCPOS);
+		return _type_table.value(type_id)->isArrayType();
 	}
 }
 

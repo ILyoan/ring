@@ -108,17 +108,15 @@ enum UnaryOp {
 
 
 enum LiteralType {
-	LIT_FALSE,
-	LIT_TRUE,
-	LIT_CHAR,
-	LIT_STRING,
-	LIT_NUM,
+	LIT_BASIC,
+	LIT_ARRAY,
 };
 
 
 enum TypeType {
 	TYPE_PRIMITIVE,
 	TYPE_FUNCTION,
+	TYPE_ARRAY,
 };
 
 
@@ -141,7 +139,6 @@ AssignmentOp convertAssignmentOp(Token::TokenType token_type);
 LogicalOp convertLogicalOp(Token::TokenType token_type);
 BinaryOp convertBinaryOp(Token::TokenType token_type);
 UnaryOp convertUnaryOp(Token::TokenType token_type);
-LiteralType convertLiteralType(Token::TokenType token_type);
 
 
 // Identifier.
@@ -165,8 +162,11 @@ public:
 
 	bool isPrimitiveType() const;
 	bool isFunctionType() const;
+	bool isArrayType() const;
 
 	bool isNil() const;
+	bool isInt() const;
+	bool isBool() const;
 };
 
 
@@ -178,17 +178,29 @@ public:
 	PrimitiveType(PrimitiveTypeType primitive_type);
 
 	bool isNil() const;
+	bool isInt() const;
+	bool isBool() const;
 };
 
 
 // Function type
-//   function_type = '(' type_list  ')' "->" type
+//   function_type = '(' type_list  ')' "->" type ;
 class FunctionType : public Type {
 	ADD_PROPERTY_R(args, vector<TypeId>)
 	ADD_PROPERTY(ret, TypeId)
 
 public:
 	FunctionType(const vector<TypeId>& args, TypeId ret);
+};
+
+
+// Array type
+//   array_type = [] type ;
+class ArrayType : public Type {
+	ADD_PROPERTY(elem_type, TypeId)
+
+public:
+	ArrayType(TypeId elem_type);
 };
 
 
@@ -367,11 +379,31 @@ protected:
 // AST node for literal expression.
 class ExprLiteral : public Expr {
 	ADD_PROPERTY(lit_type, LiteralType)
+
+public:
+	bool isBasic() const;
+	bool isArray() const;
+
+protected:
+	ExprLiteral(LiteralType lit_type);
+};
+
+
+class ExprLiteralBasic : public ExprLiteral {
 	ADD_PROPERTY(str_id, StrId)
 	friend class AstFactory;
 
 protected:
-	ExprLiteral(LiteralType lit_type, StrId str_id);
+	ExprLiteralBasic(StrId str_id);
+};
+
+
+class ExprLiteralArray : public ExprLiteral {
+	ADD_PROPERTY_R(arr, vector<Expr*>)
+	friend class AstFactory;
+
+protected:
+	ExprLiteralArray(const vector<Expr*>& arr);
 };
 
 

@@ -87,18 +87,12 @@ void TypeResolver::onVisitPostExprIdent(ExprIdent* ident) {
 }
 
 
-void TypeResolver::onVisitPostExprLiteral(ExprLiteral* literal) {
-	if (literal->type_id().none()) {
-		switch (literal->lit_type()) {
-			case LIT_FALSE:
-			case LIT_TRUE:
-				literal->type_id(getPrimTypeId(PRIM_TYPE_BOOL));
-				break;
-			case LIT_NUM:
-				literal->type_id(getPrimTypeId(PRIM_TYPE_INT));
-				break;
-			default:
-				literal->type_id(getPrimTypeId(PRIM_TYPE_NIL));
+void TypeResolver::onVisitPostExprLiteral(ExprLiteral* lit) {
+	if (lit->type_id().none()) {
+		if (lit->lit_type() == LIT_BASIC) {
+			FATAL("The type of literal SHOULD be set befer type resovle - literal: %s",
+					session()->ast_str()->toString(lit).c_str());
+		} else {
 		}
 	}
 }

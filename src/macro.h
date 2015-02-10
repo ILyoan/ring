@@ -41,7 +41,7 @@
 #define ASSERT_EQ(x, y, ...) ASSERT((x)==(y), __VA_ARGS__)
 #define ASSERT_NE(x, y, ...) ASSERT((x)!=(y), __VA_ARGS__)
 
-#define SRCPOS "%s:%d",__FILE__,__LINE__
+#define SRCPOS "%s %s:%d",__PRETTY_FUNCTION__,__FILE__,__LINE__
 
 #define DEF_ID_TYPE(name) \
 	struct name {\

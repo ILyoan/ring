@@ -84,21 +84,6 @@ UnaryOp ast::convertUnaryOp(Token::TokenType token_type) {
 }
 
 
-LiteralType ast::convertLiteralType(Token::TokenType token_type) {
-	assert(TokenUtil::isLiteral(token_type));
-
-	switch (token_type) {
-		case Token::LIT_FALSE: return LIT_FALSE;
-		case Token::LIT_TRUE: return LIT_TRUE;
-		case Token::LIT_NUMERIC: return LIT_NUM;
-		case Token::LIT_STRING: return LIT_STRING;
-	}
-	AST_FATAL("Expected a literal, but found %s",
-		Token(token_type).toString().c_str());
-}
-
-
-
 Ident::Ident(NameId name_id)
 		: _name_id(name_id)
 		, _symbol_id() {
@@ -127,8 +112,23 @@ bool Type::isFunctionType() const {
 }
 
 
+bool Type::isArrayType() const {
+	return _type == TYPE_ARRAY;
+}
+
+
 bool Type::isNil() const {
 	return (isPrimitiveType() && static_cast<const PrimitiveType*>(this)->isNil());
+}
+
+
+bool Type::isInt() const {
+	return (isPrimitiveType() && static_cast<const PrimitiveType*>(this)->isInt());
+}
+
+
+bool Type::isBool() const {
+	return (isPrimitiveType() && static_cast<const PrimitiveType*>(this)->isBool());
 }
 
 
@@ -143,10 +143,26 @@ bool PrimitiveType::isNil() const {
 }
 
 
+bool PrimitiveType::isInt() const {
+	return _primitive_type == PRIM_TYPE_INT;
+}
+
+
+bool PrimitiveType::isBool() const {
+	return _primitive_type == PRIM_TYPE_BOOL;
+}
+
+
 FunctionType::FunctionType(const vector<TypeId>& args, TypeId ret)
 		: Type(TYPE_FUNCTION)
 		, _args(args)
 		, _ret(ret) {
+}
+
+
+ArrayType::ArrayType(TypeId elem_type)
+		: Type(TYPE_ARRAY)
+		, _elem_type(elem_type) {
 }
 
 
@@ -309,10 +325,31 @@ ExprIdent::ExprIdent(Ident id)
 }
 
 
-ExprLiteral::ExprLiteral(LiteralType lit_type, StrId str_id)
+ExprLiteral::ExprLiteral(LiteralType lit_type)
 		: Expr(AST_EXPR_LITERAL)
-		, _lit_type(lit_type)
+		, _lit_type(lit_type) {
+}
+
+
+bool ExprLiteral::isBasic() const {
+	return _lit_type == LIT_BASIC;
+}
+
+
+bool ExprLiteral::isArray() const {
+	return _lit_type == LIT_ARRAY;
+}
+
+
+ExprLiteralBasic::ExprLiteralBasic(StrId str_id)
+		: ExprLiteral(LIT_BASIC)
 		, _str_id(str_id) {
+}
+
+
+ExprLiteralArray::ExprLiteralArray(const vector<Expr*>& arr)
+		: ExprLiteral(LIT_ARRAY)
+		, _arr(arr) {
 }
 
 

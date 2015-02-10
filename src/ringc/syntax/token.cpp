@@ -14,6 +14,7 @@ static string KEYWORDS[] = {
 	"this",
 	"use",
 	// builtin types
+	"bool",
 	"int",
 	"nil",
 };
@@ -142,6 +143,7 @@ string Token::toString() const {
 		case KEYWORD_THEN: return "then";
 		case KEYWORD_THIS: return "this";
 		case KEYWORD_USE: return "use";
+		case KEYWORD_TY_BOOL: return "bool";
 		case KEYWORD_TY_INT: return "int";
 		case KEYWORD_TY_NIL: return "nil";
 		case EoF: return "EOF";
