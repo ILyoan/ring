@@ -46,7 +46,7 @@ public:
 
 	// Adds a mapping between name(string) and symbol.
 	// This will happen when a definion occurs in this scope.
-	SymbolId addSymbol(NodeId node_id, NameId name_id, TypeId type_id);
+	SymbolId addSymbol(NodeId node_id, NameId name_id, TypeId ty);
 
 	// Finds symbol for given name from this scope.
 	// If there is no mapping in this scope, returns -1.

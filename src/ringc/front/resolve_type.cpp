@@ -16,34 +16,34 @@ void TypeResolver::resolve(AstNode* node) {
 
 
 void TypeResolver::onVisitPostLet(Let* let) {
-	if (let->type_id().none()) {
-		let->type_id(let->expr()->type_id());
+	if (let->ty().none()) {
+		let->ty(let->expr()->ty());
 		Symbol* symbol = session()->symbol_table()->value(let->name().symbol_id());
-		symbol->type_id(let->type_id());
+		symbol->ty(let->ty());
 	} else {
-		ASSERT_EQ(let->type_id(), let->expr()->type_id(), SRCPOS);
+		ASSERT_EQ(let->ty(), let->expr()->ty(), SRCPOS);
 	}
 }
 
 
 void TypeResolver::onVisitPostExprEmpty(ExprEmpty* empty) {
-	if (empty->type_id().none()) {
-		empty->type_id(getPrimTypeId(PRIM_TYPE_NIL));
+	if (empty->ty().none()) {
+		empty->ty(getPrimTypeId(PRIM_TYPE_NIL));
 	} else {
-		ASSERT_EQ(empty->type_id(), getPrimTypeId(PRIM_TYPE_INT), SRCPOS);
+		ASSERT_EQ(empty->ty(), getPrimTypeId(PRIM_TYPE_INT), SRCPOS);
 	}
 }
 
 
 void TypeResolver::onVisitPostExprBlock(ExprBlock* block) {
-	if (block->type_id().none()) {
+	if (block->ty().none()) {
 		if (block->stmts().empty()) {
-			block->type_id(getPrimTypeId(PRIM_TYPE_INT));
+			block->ty(getPrimTypeId(PRIM_TYPE_INT));
 		} else {
 			Stmt* last = block->stmts().back();
 			if (last->isExpr()) {
 				Expr* expr = static_cast<Expr*>(last);
-				block->type_id(expr->type_id());
+				block->ty(expr->ty());
 			} else {
 				ERROR("Last statement of block MUST be expression - block: %s",
 					session()->ast_str()->toString(block).c_str());
@@ -54,24 +54,24 @@ void TypeResolver::onVisitPostExprBlock(ExprBlock* block) {
 
 
 void TypeResolver::onVisitPostExprFn(ExprFn* fn) {
-	ASSERT(fn->type_id().some(), SRCPOS);
+	ASSERT(fn->ty().some(), SRCPOS);
 }
 
 
 void TypeResolver::onVisitPostExprIf(ExprIf* if_) {
-	if (if_->type_id().none()) {
+	if (if_->ty().none()) {
 		if (if_->alt()) {
-			TypeId con_ty = if_->con()->type_id();
-			TypeId alt_ty = if_->alt()->type_id();
+			TypeId con_ty = if_->con()->ty();
+			TypeId alt_ty = if_->alt()->ty();
 			if (con_ty == alt_ty) {
-				if_->type_id(con_ty);
+				if_->ty(con_ty);
 			} else {
 				ERROR("Type of 'then' and 'else' block of 'if' MUST be the same - if: %s",
 						session()->ast_str()->toString(if_).c_str());
-				if_->type_id(getPrimTypeId(PRIM_TYPE_INT));
+				if_->ty(getPrimTypeId(PRIM_TYPE_INT));
 			}
 		} else {
-			if_->type_id(getPrimTypeId(PRIM_TYPE_INT));
+			if_->ty(getPrimTypeId(PRIM_TYPE_INT));
 		}
 	}
 }
@@ -79,16 +79,16 @@ void TypeResolver::onVisitPostExprIf(ExprIf* if_) {
 
 void TypeResolver::onVisitPostExprIdent(ExprIdent* ident) {
 	Symbol* symbol = session()->symbol_table()->value(ident->id().symbol_id());
-	if (ident->type_id().none()) {
-		ident->type_id(symbol->type_id());
+	if (ident->ty().none()) {
+		ident->ty(symbol->ty());
 	} else {
-		ASSERT_EQ(ident->type_id(), symbol->type_id(), SRCPOS);
+		ASSERT_EQ(ident->ty(), symbol->ty(), SRCPOS);
 	}
 }
 
 
 void TypeResolver::onVisitPostExprLiteral(ExprLiteral* lit) {
-	if (lit->type_id().none()) {
+	if (lit->ty().none()) {
 		if (lit->lit_type() == LIT_BASIC) {
 			FATAL("The type of literal SHOULD be set befer type resovle - literal: %s",
 					session()->ast_str()->toString(lit).c_str());
@@ -103,77 +103,77 @@ void TypeResolver::onVisitPostExprMember(ExprMember* member) {
 
 
 void TypeResolver::onVisitPostExprCall(ExprCall* call) {
-	if (call->type_id().none()) {
-		if (call->callee()->type_id().some()) {
-			FunctionType* fn_ty = session()->type_table()->getFuncType(
-					call->callee()->type_id());
-			ASSERT_NE(fn_ty, NULL, SRCPOS);
-			call->type_id(fn_ty->ret());
+	if (call->ty().none()) {
+		if (call->callee()->ty().some()) {
+			TypeFunc* fn_type = session()->type_table()->getFuncType(
+					call->callee()->ty());
+			ASSERT_NE(fn_type, NULL, SRCPOS);
+			call->ty(fn_type->ty_ret());
 		}
 	}
-	ASSERT(call->type_id().some(), SRCPOS);
+	ASSERT(call->ty().some(), SRCPOS);
 }
 
 
 void TypeResolver::onVisitPostExprUnary(ExprUnary* unary) {
-	if (unary->type_id().none()) {
-		unary->type_id(unary->expr()->type_id());
+	if (unary->ty().none()) {
+		unary->ty(unary->expr()->ty());
 	} else {
-		ASSERT_EQ(unary->type_id(), unary->expr()->type_id(), SRCPOS);
+		ASSERT_EQ(unary->ty(), unary->expr()->ty(), SRCPOS);
 	}
 }
 
 
 void TypeResolver::onVisitPostExprBinary(ExprBinary* binary) {
-	if (binary->type_id().none()) {
-		TypeId ty1 = binary->left()->type_id();
-		TypeId ty2 = binary->right()->type_id();
+	if (binary->ty().none()) {
+		TypeId ty1 = binary->left()->ty();
+		TypeId ty2 = binary->right()->ty();
 		if (ty1 == ty2) {
-			binary->type_id(ty1);
+			binary->ty(ty1);
 		} else {
 			ERROR("Type of left and right side of binary expression MUST be the same - binary: %s",
 					session()->ast_str()->toString(binary).c_str());
-			binary->type_id(getPrimTypeId(PRIM_TYPE_NIL));
+			binary->ty(getPrimTypeId(PRIM_TYPE_NIL));
 		}
 	} else {
-		ASSERT_EQ(binary->type_id(), binary->left()->type_id(), SRCPOS);
-		ASSERT_EQ(binary->type_id(), binary->right()->type_id(), SRCPOS);
+		ASSERT_EQ(binary->ty(), binary->left()->ty(), SRCPOS);
+		ASSERT_EQ(binary->ty(), binary->right()->ty(), SRCPOS);
 	}
 }
 
 
 void TypeResolver::onVisitPostExprLogical(ExprLogical* logical) {
-	if (logical->type_id().none()) {
-		logical->type_id(getPrimTypeId(PRIM_TYPE_BOOL));
+	if (logical->ty().none()) {
+		logical->ty(getPrimTypeId(PRIM_TYPE_BOOL));
 	} else {
-		ASSERT_EQ(logical->type_id(), getPrimTypeId(PRIM_TYPE_BOOL), SRCPOS);
+		ASSERT_EQ(logical->ty(), getPrimTypeId(PRIM_TYPE_BOOL), SRCPOS);
 	}
 }
 
 
 void TypeResolver::onVisitPostExprConditional(ExprConditional* cond) {
-	if (cond->type_id().none()) {
-		TypeId con_ty = cond->con()->type_id();
-		TypeId alt_ty = cond->alt()->type_id();
+	if (cond->ty().none()) {
+		TypeId con_ty = cond->con()->ty();
+		TypeId alt_ty = cond->alt()->ty();
 		if (con_ty == alt_ty) {
-			cond->type_id(con_ty);
+			cond->ty(con_ty);
 		} else {
 			ERROR("Type of 'con' and 'alt' block of conditional expression MUST be the same - cond: %s",
 					session()->ast_str()->toString(cond).c_str());
-			cond->type_id(getPrimTypeId(PRIM_TYPE_INT));
+			cond->ty(getPrimTypeId(PRIM_TYPE_INT));
 		}
 	} else {
-		ASSERT_EQ(cond->type_id(), cond->con()->type_id(), SRCPOS);
-		ASSERT_EQ(cond->type_id(), cond->alt()->type_id(), SRCPOS);
+		ASSERT_EQ(cond->ty(), cond->con()->ty(), SRCPOS);
+		ASSERT_EQ(cond->ty(), cond->alt()->ty(), SRCPOS);
 	}
 }
 
 
 void TypeResolver::onVisitPostExprAssignment(ExprAssignment* assign) {
-	if (assign->type_id().none()) {
-		assign->type_id(assign->left()->type_id());
+	if (assign->ty().none()) {
+		assign->ty(assign->left()->ty());
 	} else {
-		ASSERT_EQ(assign->type_id(), assign->left()->type_id(), SRCPOS);
+		ASSERT_EQ(assign->ty(), assign->left()->ty(), SRCPOS);
 	}
 }
 

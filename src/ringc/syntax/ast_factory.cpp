@@ -24,13 +24,13 @@ Use* AstFactory::createUse(Ident module_name, Ident module_as, Module* module) {
 }
 
 
-Extern* AstFactory::createExtern(Ident name, TypeId type_id) {
-	return static_cast<Extern*>(assignNode(new Extern(name, type_id)));
+Extern* AstFactory::createExtern(Ident name, TypeId ty) {
+	return static_cast<Extern*>(assignNode(new Extern(name, ty)));
 }
 
 
-Let* AstFactory::createLet(bool is_pub, bool is_mut, Ident name, TypeId type_id, Expr* expr) {
-	return static_cast<Let*>(assignNode(new Let(is_pub, is_mut, name, type_id, expr)));
+Let* AstFactory::createLet(bool is_pub, bool is_mut, Ident name, TypeId ty, Expr* expr) {
+	return static_cast<Let*>(assignNode(new Let(is_pub, is_mut, name, ty, expr)));
 }
 
 
@@ -45,8 +45,8 @@ ExprBlock* AstFactory::createExprBlock() {
 
 
 ExprFn* AstFactory::createExprFn(
-		TypeId type_id, const vector<Ident>& args, ExprBlock* body) {
-	return static_cast<ExprFn*>(assignNode(new ExprFn(type_id, args, body)));
+		TypeId ty, const vector<Ident>& args, ExprBlock* body) {
+	return static_cast<ExprFn*>(assignNode(new ExprFn(ty, args, body)));
 }
 
 

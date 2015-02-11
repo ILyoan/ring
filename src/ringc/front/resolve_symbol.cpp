@@ -91,7 +91,7 @@ SymbolId SymbolResolver::findSymbol(AstNode* node, NameId name_id) {
 
 // Add symbol.
 SymbolId SymbolResolver::addSymbol(
-		ScopeId scope_id, NodeId node_id, NameId name_id, TypeId type_id) {
+		ScopeId scope_id, NodeId node_id, NameId name_id, TypeId ty) {
 	assert(scope_id.some() && name_id.some());
 
 	Scope* scope = session()->scope_table()->value(scope_id);
@@ -101,7 +101,7 @@ SymbolId SymbolResolver::addSymbol(
 		ERROR("Duplicated symbol: %s", session()->str_table()->value(name_id).c_str());
 		return SymbolId();
 	} else {
-		return scope->addSymbol(node_id, name_id, type_id);
+		return scope->addSymbol(node_id, name_id, ty);
 	}
 }
 
@@ -120,7 +120,7 @@ void SymbolResolver::processExtern(Extern* ext) {
 	ScopeId scope_id = findNearestScope(ext);
 	ASSERT(scope_id.some(), "No scope for: extern %d", ext->node_id());
 	SymbolId symbol_id = addSymbol(
-			scope_id, ext->node_id(), ext->name().name_id(), ext->type_id());
+			scope_id, ext->node_id(), ext->name().name_id(), ext->ty());
 	ext->name(Ident(ext->name().name_id(), symbol_id));
 }
 
@@ -135,21 +135,21 @@ void SymbolResolver::processLet(Let* let) {
 	ScopeId scope_id = findNearestScope(let);
 	ASSERT(scope_id.some(), "No scope for: let %d", let->node_id());
 	SymbolId symbol_id = addSymbol(
-			scope_id, let->node_id(), let->name().name_id(), let->type_id());
+			scope_id, let->node_id(), let->name().name_id(), let->ty());
 	let->name(Ident(let->name().name_id(), symbol_id));
 }
 
 
 // Let binding for function should treated before function itself since there may be recursive call.
 void SymbolResolver::onVisitPreLet(Let* let) {
-	if (let->type_id().none()) {
+	if (let->ty().none()) {
 		if (let->expr()->isExprFn()) {
 			ExprFn* fn = static_cast<ExprFn*>(let->expr());
-			ASSERT(fn->type_id().some(), SRCPOS);
-			let->type_id(fn->type_id());
+			ASSERT(fn->ty().some(), SRCPOS);
+			let->ty(fn->ty());
 		}
 	}
-	if (session()->type_table()->isFuncType(let->type_id())) {
+	if (session()->type_table()->isFuncType(let->ty())) {
 		processLet(let);
 		// Check if this function is a "main".
 		if (session()->str_table()->value(let->name().name_id()) == MainName) {
@@ -163,7 +163,7 @@ void SymbolResolver::onVisitPreLet(Let* let) {
 
 // Let binding for except function should treated after its assignee.
 void SymbolResolver::onVisitPostLet(Let* let) {
-	if (!session()->type_table()->isFuncType(let->type_id())) {
+	if (!session()->type_table()->isFuncType(let->ty())) {
 		processLet(let);
 	}
 }
@@ -177,17 +177,17 @@ void SymbolResolver::onVisitPreExprBlock(ExprBlock* block) {
 	// If this block is a function block, add function arguments symbols to the scope.
 	if (block->parent()->isExprFn()) {
 		ExprFn* fn = static_cast<ExprFn*>(block->parent());
-		FunctionType* fn_type = session()->type_table()->getFuncType(fn->type_id());
-		const auto& arg_types = fn_type->args();
-		auto& arg_names = fn->args();
-		if (arg_types.size() != arg_names.size()) {
+		TypeFunc* fn_type = session()->type_table()->getFuncType(fn->ty());
+		const auto& ty_args = fn_type->ty_args();
+		auto& args = fn->args();
+		if (ty_args.size() != args.size()) {
 			FATAL("Number of argument type and name are not the same: fn expr %d", fn->node_id());
 		}
-		for (int i = 0; i < arg_types.size(); ++i) {
-			Ident name = arg_names[i];
-			TypeId type_id = arg_types[i];
-			SymbolId symbol_id = this->addSymbol(scope_id, NodeId(), name.name_id(), type_id);
-			arg_names[i] = Ident(name.name_id(), symbol_id);
+		for (int i = 0; i < ty_args.size(); ++i) {
+			Ident name = args[i];
+			TypeId ty = ty_args[i];
+			SymbolId symbol_id = this->addSymbol(scope_id, NodeId(), name.name_id(), ty);
+			args[i] = Ident(name.name_id(), symbol_id);
 		}
 	}
 }

@@ -66,7 +66,7 @@ Module* Parser::parseModule() {
 	// Parse let bindings.
 	while (!isEof()) {
 		Let* let = parseLet(true);
-		if (session()->type_table()->isPrimType(let->type_id())) {
+		if (session()->type_table()->isPrimType(let->ty())) {
 			eatType(Token::SEMICOLON);
 		}
 		module->addDecl(let);
@@ -94,9 +94,9 @@ Extern* Parser::parseExtern() {
 	// eat semicolon.
 	eatType(Token::COLON);
 	// parse type
-	TypeId type_id= parseType();
+	TypeId ty= parseType();
 
-	return ast_fac()->createExtern(name, type_id);
+	return ast_fac()->createExtern(name, ty);
 }
 
 
@@ -140,9 +140,9 @@ Let* Parser::parseLet(bool is_global) {
 	Ident name = eatIdent();
 
 	// Parse type.
-	TypeId type_id;
+	TypeId ty;
 	if (maybeEatType(Token::COLON)) {
-		type_id = parseType();
+		ty = parseType();
 	}
 
 	// Eat '=' token.
@@ -151,12 +151,12 @@ Let* Parser::parseLet(bool is_global) {
 	// Parse espression
 	Expr* expr = parseExpr();
 
-	if (type_id.none()) {
-		type_id = expr->type_id();
+	if (ty.none()) {
+		ty = expr->ty();
 	}
 
 	// Return let expression.
-	return ast_fac()->createLet(is_pub, is_mut, name, type_id, expr);
+	return ast_fac()->createLet(is_pub, is_mut, name, ty, expr);
 }
 
 
@@ -223,7 +223,7 @@ ExprFn* Parser::parseExprFn() {
 	ScopeTracer tracer(_session, "parseExprFn()");
 
 	// Parse function prototype.
-	auto proto = parseFunctionType(true);
+	auto proto = parseTypeFunc(true);
 
 	// Parse function bady.
 	ExprBlock* body = parseExprBlock();
@@ -285,7 +285,7 @@ ExprLiteral* Parser::parseExprLiteral() {
 	}
 	ASSERT_NE(expr_lit, NULL, SRCPOS);
 	if (maybeEatType(Token::COLON)) {
-		expr_lit->type_id(parseType());
+		expr_lit->ty(parseType());
 	}
 	return expr_lit;
 }
@@ -301,10 +301,10 @@ ExprLiteralBasic* Parser::parseExprLiteralBasic() {
 	switch (lit.type()) {
 		case Token::LIT_FALSE:
 		case Token::LIT_TRUE:
-			expr_lit->type_id(ast_fac()->getPrimTypeId(PRIM_TYPE_BOOL));
+			expr_lit->ty(ast_fac()->getPrimTypeId(PRIM_TYPE_BOOL));
 			break;
 		case Token::LIT_NUMERIC:
-			expr_lit->type_id(ast_fac()->getPrimTypeId(PRIM_TYPE_INT));
+			expr_lit->ty(ast_fac()->getPrimTypeId(PRIM_TYPE_INT));
 			break;
 	}
 	return expr_lit;
@@ -417,7 +417,7 @@ Expr* Parser::parseExprMemberOrCall(Expr* primary) {
 		} else if (maybeEatType(Token::DOT)) {
 			res = ast_fac()->createExprMember(res, Property(eatIdent().name_id()));
 		} else if (maybeEatType(Token::LPAREN)) {
-			res = ast_fac()->createExprCall(res, parseArguments());
+			res = ast_fac()->createExprCall(res, parseArgs());
 			eatType(Token::RPAREN);
 		}
 	}
@@ -425,7 +425,7 @@ Expr* Parser::parseExprMemberOrCall(Expr* primary) {
 }
 
 
-vector<Expr*> Parser::parseArguments() {
+vector<Expr*> Parser::parseArgs() {
 	vector<Expr*> res;
 	if (isType(Token::RPAREN)) return res;
 	do {
@@ -633,9 +633,9 @@ TypeId Parser::parseType() {
 	ScopeTracer tracer(_session, "parseType()");
 
 	if (isType(Token::KEYWORD_FN)) {
-		return parseFunctionType(false).first;
+		return parseTypeFunc(false).first;
 	} else if (isType(Token::LBRACKET)) {
-		return parseArrayType();
+		return parseTypeArray();
 	} else {
 		if (maybeEatType(Token::KEYWORD_TY_INT)) {
 			return ast_fac()->getPrimTypeId(PRIM_TYPE_INT);
@@ -652,8 +652,8 @@ TypeId Parser::parseType() {
 
 // Parse function type
 //   "fn" '(' type_list ')' [ "->" type ]
-pair<TypeId, vector<Ident> > Parser::parseFunctionType(bool parse_arg_names) {
-	ScopeTracer tracer(_session, "parseFunctionType()");
+pair<TypeId, vector<Ident> > Parser::parseTypeFunc(bool parse_arg_names) {
+	ScopeTracer tracer(_session, "parseTypeFunc()");
 
 	vector<TypeId> arg_types;
 	vector<Ident> arg_names;
@@ -699,8 +699,8 @@ pair<TypeId, vector<Ident> > Parser::parseFunctionType(bool parse_arg_names) {
 }
 
 
-TypeId Parser::parseArrayType() {
-	ScopeTracer tracer(_session, "parseArrayType()");
+TypeId Parser::parseTypeArray() {
+	ScopeTracer tracer(_session, "parseTypeArray()");
 
 	if (!eatType(Token::LBRACKET)) {
 		return TypeId();
@@ -708,8 +708,8 @@ TypeId Parser::parseArrayType() {
 	if (!eatType(Token::RBRACKET)) {
 		return TypeId();
 	}
-	TypeId type_id = parseType();
-	return ast_fac()->getArrayTypeId(type_id);
+	TypeId ty = parseType();
+	return ast_fac()->getArrayTypeId(ty);
 }
 
 

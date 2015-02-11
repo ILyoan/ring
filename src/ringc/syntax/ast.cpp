@@ -102,13 +102,13 @@ Type::Type(TypeType type)
 }
 
 
-bool Type::isPrimitiveType() const {
-	return _type == TYPE_PRIMITIVE;
+bool Type::isPrimType() const {
+	return _type == TYPE_PRIM;
 }
 
 
-bool Type::isFunctionType() const {
-	return _type == TYPE_FUNCTION;
+bool Type::isFuncType() const {
+	return _type == TYPE_FUNC;
 }
 
 
@@ -118,51 +118,51 @@ bool Type::isArrayType() const {
 
 
 bool Type::isNil() const {
-	return (isPrimitiveType() && static_cast<const PrimitiveType*>(this)->isNil());
+	return (isPrimType() && static_cast<const TypePrim*>(this)->isNil());
 }
 
 
 bool Type::isInt() const {
-	return (isPrimitiveType() && static_cast<const PrimitiveType*>(this)->isInt());
+	return (isPrimType() && static_cast<const TypePrim*>(this)->isInt());
 }
 
 
 bool Type::isBool() const {
-	return (isPrimitiveType() && static_cast<const PrimitiveType*>(this)->isBool());
+	return (isPrimType() && static_cast<const TypePrim*>(this)->isBool());
 }
 
 
-PrimitiveType::PrimitiveType(PrimitiveTypeType type)
-		: Type(TYPE_PRIMITIVE)
-		, _primitive_type(type) {
+TypePrim::TypePrim(TypePrimType type)
+		: Type(TYPE_PRIM)
+		, _prim_type(type) {
 }
 
 
-bool PrimitiveType::isNil() const {
-	return _primitive_type == PRIM_TYPE_NIL;
+bool TypePrim::isNil() const {
+	return _prim_type == PRIM_TYPE_NIL;
 }
 
 
-bool PrimitiveType::isInt() const {
-	return _primitive_type == PRIM_TYPE_INT;
+bool TypePrim::isInt() const {
+	return _prim_type == PRIM_TYPE_INT;
 }
 
 
-bool PrimitiveType::isBool() const {
-	return _primitive_type == PRIM_TYPE_BOOL;
+bool TypePrim::isBool() const {
+	return _prim_type == PRIM_TYPE_BOOL;
 }
 
 
-FunctionType::FunctionType(const vector<TypeId>& args, TypeId ret)
-		: Type(TYPE_FUNCTION)
-		, _args(args)
-		, _ret(ret) {
+TypeFunc::TypeFunc(const vector<TypeId>& ty_args, TypeId ty_ret)
+		: Type(TYPE_FUNC)
+		, _ty_args(ty_args)
+		, _ty_ret(ty_ret) {
 }
 
 
-ArrayType::ArrayType(TypeId elem_type)
+TypeArray::TypeArray(TypeId ty_elem)
 		: Type(TYPE_ARRAY)
-		, _elem_type(elem_type) {
+		, _ty_elem(ty_elem) {
 }
 
 
@@ -255,10 +255,10 @@ Use::Use(Ident module_name, Ident module_as, Module* module)
 }
 
 
-Extern::Extern(Ident name, TypeId type_id)
+Extern::Extern(Ident name, TypeId ty)
 		: AstNode(AST_EXTERN)
 		, _name(name)
-		, _type_id(type_id) {
+		, _ty(ty) {
 }
 
 
@@ -267,12 +267,12 @@ Stmt::Stmt(AstNodeType node_type)
 }
 
 
-Let::Let(bool is_pub, bool is_mut, Ident name, TypeId type_id, Expr* expr)
+Let::Let(bool is_pub, bool is_mut, Ident name, TypeId ty, Expr* expr)
 		: Stmt(AST_LET)
 		, _is_pub(is_pub)
 		, _is_mut(is_mut)
 		, _name(name)
-		, _type_id(type_id)
+		, _ty(ty)
 		, _expr(expr) {
 }
 
@@ -284,7 +284,7 @@ bool Let::inModuleScope() const {
 
 Expr::Expr(AstNodeType node_type)
 		: Stmt(node_type)
-		, _type_id() {
+		, _ty() {
 }
 
 
@@ -303,11 +303,11 @@ void ExprBlock::addStatement(Stmt* stmt) {
 }
 
 
-ExprFn::ExprFn(TypeId type_id, const vector<Ident>& args, ExprBlock* body)
+ExprFn::ExprFn(TypeId ty, const vector<Ident>& args, ExprBlock* body)
 		: Expr(AST_EXPR_FN)
 		, _args(args)
 		, _body(body) {
-	Expr::type_id(type_id);
+	Expr::ty(ty);
 }
 
 

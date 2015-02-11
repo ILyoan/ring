@@ -25,11 +25,11 @@ class Symbol {
 	ADD_PROPERTY(node_id, NodeId)
 	ADD_PROPERTY(name_id, NameId)
 	ADD_PROPERTY(scope_id, ScopeId)
-	ADD_PROPERTY(type_id, TypeId)
+	ADD_PROPERTY(ty, TypeId)
 	ADD_PROPERTY_P(llvm_val, llvm::Value)
 
 public:
-	Symbol(NodeId node_id, NameId name_id, ScopeId scope_id, TypeId type_id);
+	Symbol(NodeId node_id, NameId name_id, ScopeId scope_id, TypeId ty);
 };
 
 

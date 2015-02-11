@@ -67,10 +67,9 @@ protected:
 	Expr* parseExprAssignment();
 
 	TypeId parseType();
-	TypeId parseArrayType();
-	pair<TypeId, vector<Ident> > parseFunctionType(bool parse_arg_names);
-	vector<Expr*> parseArguments();
-
+	TypeId parseTypeArray();
+	pair<TypeId, vector<Ident> > parseTypeFunc(bool parse_arg_names);
+	vector<Expr*> parseArgs();
 
 	bool needSemicolon(Stmt* stmt);
 

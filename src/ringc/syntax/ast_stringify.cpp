@@ -91,7 +91,7 @@ string AstStringify::toString(UnaryOp op) {
 }
 
 
-string AstStringify::toString(PrimitiveTypeType prim_type) {
+string AstStringify::toString(TypePrimType prim_type) {
 	switch (prim_type) {
 		case PRIM_TYPE_NIL: return "nil";
 		case PRIM_TYPE_INT: return "int";
@@ -101,9 +101,9 @@ string AstStringify::toString(PrimitiveTypeType prim_type) {
 }
 
 
-string AstStringify::toString(TypeId type_id) {
-	if (type_id.some()) {
-		Type* type = session()->type_table()->getType(type_id);
+string AstStringify::toString(TypeId ty) {
+	if (ty.some()) {
+		Type* type = session()->type_table()->getType(ty);
 		if (type) {
 			return toString(type);
 		}
@@ -114,38 +114,39 @@ string AstStringify::toString(TypeId type_id) {
 
 string AstStringify::toString(Type* type) {
 	switch (type->type()) {
-		case TYPE_PRIMITIVE: return toString(static_cast<PrimitiveType*>(type));
-		case TYPE_FUNCTION:  return toString(static_cast<FunctionType*>(type));
-		case TYPE_ARRAY: return toString(static_cast<ArrayType*>(type));
+		case TYPE_PRIM: return toString(static_cast<TypePrim*>(type));
+		case TYPE_FUNC:  return toString(static_cast<TypeFunc*>(type));
+		case TYPE_ARRAY: return toString(static_cast<TypeArray*>(type));
 	}
 	return "Unknown type";
 }
 
 
-string AstStringify::toString(PrimitiveType* type) {
-	return toString(type->primitive_type());
+string AstStringify::toString(TypePrim* type) {
+	return toString(type->prim_type());
 }
 
 
-string AstStringify::toString(FunctionType* type) {
+string AstStringify::toString(TypeFunc* type) {
 	string res = "";
 	res += "(";
 	bool first = true;
-	for_each (type->args().begin(), type->args().end(), [this, &res, &first, type] (TypeId type_id) {
-		if (!first) res += ", ";
-		res += toString(type_id);
-		first = false;
+	for_each (type->ty_args().begin(), type->ty_args().end(),
+			[this, &res, &first, type] (TypeId ty) {
+				if (!first) res += ", ";
+				res += toString(ty);
+				first = false;
 	});
 	res += ") -> ";
-	res += toString(type->ret());
+	res += toString(type->ty_ret());
 	return res;
 }
 
 
-string AstStringify::toString(ArrayType* type) {
+string AstStringify::toString(TypeArray* type) {
 	string res = "";
 	res += "[] ";
-	res += toString(type->elem_type());
+	res += toString(type->ty_elem());
 	return res;
 }
 
@@ -164,7 +165,7 @@ string AstStringify::toString(Extern* ext) {
 	string body =  "Extern ";
 	body += c_Magenta + session()->str(ext->name().name_id()) + c_none + " ";
 	body += c_Green + "(" + intToString(ext->name().symbol_id().value()) + ")" + c_none;
-	body += c_gray + " : " + toString(ext->type_id()) + c_none;
+	body += c_gray + " : " + toString(ext->ty()) + c_none;
 	return toStringAst(ext, body);
 }
 
@@ -181,7 +182,7 @@ string AstStringify::toString(Let* let) {
 	body += let->is_mut() ? "mut " : "";
 	body += c_Magenta + session()->str(let->name().name_id()) + c_none + " ";
 	body += c_Green + "(" + intToString(let->name().symbol_id().value()) + ")" + c_none;
-	body += c_gray + " : " + toString(let->type_id()) + c_none;
+	body += c_gray + " : " + toString(let->ty()) + c_none;
 	return toStringAst(let, body);
 }
 
@@ -293,7 +294,7 @@ string AstStringify::toStringAst(AstNode* node, const string& body) {
 
 string AstStringify::toStringExpr(Expr* expr, const string& body) {
 	string res = toStringAst(expr, body);
-	res += c_gray + " : " + toString(expr->type_id()) + c_none;
+	res += c_gray + " : " + toString(expr->ty()) + c_none;
 	return res;
 }
 

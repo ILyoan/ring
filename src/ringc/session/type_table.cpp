@@ -15,27 +15,27 @@ TypeTable::~TypeTable() {
 }
 
 
-Type* TypeTable::getType(TypeId type_id) {
-	ASSERT(type_id.value() >= 0 && type_id.value() < _type_table.length(), SRCPOS);
-	return _type_table.value(type_id);
+Type* TypeTable::getType(TypeId ty) {
+	ASSERT(ty.value() >= 0 && ty.value() < _type_table.length(), SRCPOS);
+	return _type_table.value(ty);
 }
 
 
-PrimitiveType* TypeTable::getPrimType(TypeId type_id) {
-	ASSERT(isPrimType(type_id), SRCPOS);
-	return static_cast<PrimitiveType*>(getType(type_id));
+TypePrim* TypeTable::getPrimType(TypeId ty) {
+	ASSERT(isPrimType(ty), SRCPOS);
+	return static_cast<TypePrim*>(getType(ty));
 }
 
 
-FunctionType* TypeTable::getFuncType(TypeId type_id) {
-	ASSERT(isFuncType(type_id), SRCPOS);
-	return static_cast<FunctionType*>(getType(type_id));
+TypeFunc* TypeTable::getFuncType(TypeId ty) {
+	ASSERT(isFuncType(ty), SRCPOS);
+	return static_cast<TypeFunc*>(getType(ty));
 }
 
 
-ArrayType* TypeTable::getArrayType(TypeId type_id) {
-	ASSERT(isArrayType(type_id), SRCPOS);
-	return static_cast<ArrayType*>(getType(type_id));
+TypeArray* TypeTable::getArrayType(TypeId ty) {
+	ASSERT(isArrayType(ty), SRCPOS);
+	return static_cast<TypeArray*>(getType(ty));
 }
 
 
@@ -43,9 +43,9 @@ TypeId TypeTable::getPrimTypeId(const PrimTypeKey& prim_type_key) {
 	if (_prim_type_map.count(prim_type_key) > 0) {
 		return _prim_type_map[prim_type_key];
 	} else {
-		TypeId type_id = addType(new PrimitiveType(prim_type_key));
-		_prim_type_map[prim_type_key] = type_id;
-		return type_id;
+		TypeId ty = addType(new TypePrim(prim_type_key));
+		_prim_type_map[prim_type_key] = ty;
+		return ty;
 	}
 }
 
@@ -54,9 +54,9 @@ TypeId TypeTable::getFuncTypeId(const FuncTypeKey& func_type_key) {
 	if (_func_type_map.count(func_type_key) > 0) {
 		return _func_type_map[func_type_key];
 	} else {
-		TypeId type_id = addType(new FunctionType(func_type_key.first, func_type_key.second));
-		_func_type_map[func_type_key] = type_id;
-		return type_id;
+		TypeId ty = addType(new TypeFunc(func_type_key.first, func_type_key.second));
+		_func_type_map[func_type_key] = ty;
+		return ty;
 	}
 }
 
@@ -65,47 +65,47 @@ TypeId TypeTable::getArrayTypeId(const ArrayTypeKey& array_type_key) {
 	if (_array_type_map.count(array_type_key) > 0) {
 		return _array_type_map[array_type_key];
 	} else {
-		TypeId type_id = addType(new ArrayType(array_type_key));
-		_array_type_map[array_type_key] = type_id;
-		return type_id;
+		TypeId ty = addType(new TypeArray(array_type_key));
+		_array_type_map[array_type_key] = ty;
+		return ty;
 	}
 }
 
 
-bool TypeTable::isPrimType(TypeId type_id) {
-	if (type_id.none()) {
+bool TypeTable::isPrimType(TypeId ty) {
+	if (ty.none()) {
 		return false;
 	} else {
-		ASSERT(type_id.value() >= 0 && type_id.value() < _type_table.length(), SRCPOS);
-		return _type_table.value(type_id)->isPrimitiveType();
+		ASSERT(ty.value() >= 0 && ty.value() < _type_table.length(), SRCPOS);
+		return _type_table.value(ty)->isPrimType();
 	}
 }
 
 
-bool TypeTable::isFuncType(TypeId type_id) {
-	if (type_id.none()) {
+bool TypeTable::isFuncType(TypeId ty) {
+	if (ty.none()) {
 		return false;
 	} else {
-		ASSERT(type_id.value() >= 0 && type_id.value() < _type_table.length(), SRCPOS);
-		return _type_table.value(type_id)->isFunctionType();
+		ASSERT(ty.value() >= 0 && ty.value() < _type_table.length(), SRCPOS);
+		return _type_table.value(ty)->isFuncType();
 	}
 }
 
 
-bool TypeTable::isArrayType(TypeId type_id) {
-	if (type_id.none()) {
+bool TypeTable::isArrayType(TypeId ty) {
+	if (ty.none()) {
 		return false;
 	} else {
-		ASSERT(type_id.value() >= 0 && type_id.value() < _type_table.length(), SRCPOS);
-		return _type_table.value(type_id)->isArrayType();
+		ASSERT(ty.value() >= 0 && ty.value() < _type_table.length(), SRCPOS);
+		return _type_table.value(ty)->isArrayType();
 	}
 }
 
 
 TypeId TypeTable::addType(Type* type) {
-	ASSERT(type->type_id().none(), SRCPOS);
-	TypeId type_id = _type_table.add(type);
-	type->type_id(type_id);
-	return type_id;
+	ASSERT(type->ty().none(), SRCPOS);
+	TypeId ty = _type_table.add(type);
+	type->ty(ty);
+	return ty;
 }
 

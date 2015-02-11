@@ -44,7 +44,7 @@ protected:
 	SymbolId findSymbol(AstNode* node, NameId name_id);
 
 	// Add symbol.
-	SymbolId addSymbol(ScopeId scope_id, NodeId node_id, NameId name_id, TypeId type_id);
+	SymbolId addSymbol(ScopeId scope_id, NodeId node_id, NameId name_id, TypeId ty);
 
 protected:
 	ADD_VISITOR_PRE(Module);

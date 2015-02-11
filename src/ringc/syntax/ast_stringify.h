@@ -31,13 +31,13 @@ public:
 	static string toString(LogicalOp op);
 	static string toString(BinaryOp op);
 	static string toString(UnaryOp op);
-	static string toString(PrimitiveTypeType prim_type);
+	static string toString(TypePrimType prim_type);
 
-	string toString(TypeId type_id);
+	string toString(TypeId ty);
 	string toString(Type* type);
-	string toString(PrimitiveType* type);
-	string toString(FunctionType* type);
-	string toString(ArrayType* type);
+	string toString(TypePrim* type);
+	string toString(TypeFunc* type);
+	string toString(TypeArray* type);
 
 	AST_HANDLER_DECL_RET(toString, string)
 

@@ -114,13 +114,13 @@ enum LiteralType {
 
 
 enum TypeType {
-	TYPE_PRIMITIVE,
-	TYPE_FUNCTION,
+	TYPE_PRIM,
+	TYPE_FUNC,
 	TYPE_ARRAY,
 };
 
 
-enum PrimitiveTypeType {
+enum TypePrimType {
 	PRIM_TYPE_NIL,
 	PRIM_TYPE_INT,
 	PRIM_TYPE_BOOL,
@@ -154,14 +154,14 @@ public:
 
 // Type of data
 class Type {
-	ADD_PROPERTY(type_id, TypeId)
+	ADD_PROPERTY(ty, TypeId)
 	ADD_PROPERTY(type, TypeType)
 
 public:
 	Type(TypeType type);
 
-	bool isPrimitiveType() const;
-	bool isFunctionType() const;
+	bool isPrimType() const;
+	bool isFuncType() const;
 	bool isArrayType() const;
 
 	bool isNil() const;
@@ -171,11 +171,11 @@ public:
 
 
 // Primiteve type
-class PrimitiveType : public Type {
-	ADD_PROPERTY(primitive_type, PrimitiveTypeType)
+class TypePrim : public Type {
+	ADD_PROPERTY(prim_type, TypePrimType)
 
 public:
-	PrimitiveType(PrimitiveTypeType primitive_type);
+	TypePrim(TypePrimType prim_type);
 
 	bool isNil() const;
 	bool isInt() const;
@@ -185,22 +185,22 @@ public:
 
 // Function type
 //   function_type = '(' type_list  ')' "->" type ;
-class FunctionType : public Type {
-	ADD_PROPERTY_R(args, vector<TypeId>)
-	ADD_PROPERTY(ret, TypeId)
+class TypeFunc : public Type {
+	ADD_PROPERTY_R(ty_args, vector<TypeId>)
+	ADD_PROPERTY(ty_ret, TypeId)
 
 public:
-	FunctionType(const vector<TypeId>& args, TypeId ret);
+	TypeFunc(const vector<TypeId>& ty_args, TypeId ty_ret);
 };
 
 
 // Array type
 //   array_type = [] type ;
-class ArrayType : public Type {
-	ADD_PROPERTY(elem_type, TypeId)
+class TypeArray : public Type {
+	ADD_PROPERTY(ty_elem, TypeId)
 
 public:
-	ArrayType(TypeId elem_type);
+	TypeArray(TypeId elem_type);
 };
 
 
@@ -273,11 +273,11 @@ protected:
 //   extern = "extern" ident ':' type
 class Extern : public AstNode {
 	ADD_PROPERTY(name, Ident)
-	ADD_PROPERTY(type_id, TypeId)
+	ADD_PROPERTY(ty, TypeId)
 	friend class AstFactory;
 
 protected:
-	Extern(Ident name, TypeId type_id);
+	Extern(Ident name, TypeId ty);
 };
 
 
@@ -299,7 +299,7 @@ class Let : public Stmt {
 	ADD_PROPERTY(is_pub, bool)
 	ADD_PROPERTY(is_mut, bool)
 	ADD_PROPERTY(name, Ident)
-	ADD_PROPERTY(type_id, TypeId)
+	ADD_PROPERTY(ty, TypeId)
 	ADD_PROPERTY_P(expr, Expr)
 	friend class AstFactory;
 
@@ -307,13 +307,13 @@ public:
 	bool inModuleScope() const;
 
 protected:
-	Let(bool is_pub, bool is_mut, Ident name, TypeId type_id, Expr* expr);
+	Let(bool is_pub, bool is_mut, Ident name, TypeId ty, Expr* expr);
 };
 
 
 // AST node for expression.
 class Expr : public Stmt {
-	ADD_PROPERTY(type_id, TypeId)
+	ADD_PROPERTY(ty, TypeId)
 protected:
 	Expr(AstNodeType node_type);
 };
@@ -350,7 +350,7 @@ class ExprFn : public Expr {
 	friend class AstFactory;
 
 protected:
-	ExprFn(TypeId type_id, const vector<Ident>& args, ExprBlock* body);
+	ExprFn(TypeId ty, const vector<Ident>& args, ExprBlock* body);
 };
 
 
@@ -407,6 +407,7 @@ protected:
 };
 
 
+
 // AST node for left hand side expression.
 //   left_hand_side_expr = member_expr | call_expr ;
 
@@ -426,7 +427,7 @@ protected:
 
 // AST node for call expression.
 //   call_expr = expr arguments
-//   arguments = '(' ')' | '(' argument_list ')' ;
+//   arguments = '(' ')' | '(' argument_list ')' ;ty
 class ExprCall : public Expr {
 	ADD_PROPERTY_P(callee, Expr)
 	ADD_PROPERTY_R(args, vector<Expr*>)

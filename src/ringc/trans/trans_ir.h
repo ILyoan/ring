@@ -50,12 +50,14 @@ protected:
 	llvm::Value* transExprConditional(ast::ExprConditional* conditional);
 	llvm::Value* transExprAssignment(ast::ExprAssignment* assignment);
 
-	llvm::Type* transType(TypeId type_id);
+	llvm::Type* transType(TypeId ty);
 	llvm::Type* transType(ast::Type* type);
-	llvm::Type* transPrimitiveType(ast::PrimitiveType* prim_type);
-	llvm::FunctionType* transFunctionType(ast::FunctionType* fn_type);
-	llvm::Function* transFunctionProto(
-			ast::FunctionType* fn_type,
+	llvm::Type* transPrimType(ast::TypePrim* prim_type);
+	llvm::Type* transArrayType(ast::TypeArray* arr_type);
+	llvm::FunctionType* transFuncType(ast::TypeFunc* fn_type);
+
+	llvm::Function* transFuncProto(
+			ast::TypeFunc* fn_type,
 			vector<Ident>& args,
 			NameId name_id = NameId(),
 			bool is_external = true);
@@ -64,8 +66,8 @@ protected:
 	llvm::AllocaInst* createEntryBlockAlloca(llvm::Function* ll_fn, SymbolId symbol_id);
 	void CreateArgumentAllocas(ast::ExprFn* fn, llvm::Function* ll_fn);
 
-	llvm::Constant* getConstantInt(int v, int bits = 32, bool is_signed = false);
-	llvm::Constant* getConstantInt(StrId str_id, int bits = 32, uint8_t radix = 10);
+	llvm::Constant* getConstInt(int v, int bits = 32, bool is_signed = false);
+	llvm::Constant* getConstInt(StrId str_id, int bits = 32, uint8_t radix = 10);
 
 	llvm::LLVMContext& llvmContext();
 	llvm::Function* llvmCurrFn();

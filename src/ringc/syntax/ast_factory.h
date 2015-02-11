@@ -24,11 +24,11 @@ public:
 
 	Module* createModule();
 	Use* createUse(Ident module_name, Ident module_as, Module* module);
-	Extern* createExtern(Ident name, TypeId type_id);
-	Let* createLet(bool is_pub, bool is_mut, Ident name, TypeId type_id, Expr* expr);
+	Extern* createExtern(Ident name, TypeId ty);
+	Let* createLet(bool is_pub, bool is_mut, Ident name, TypeId ty, Expr* expr);
 	ExprEmpty* createExprEmpty();
 	ExprBlock* createExprBlock();
-	ExprFn* createExprFn(TypeId type_id, const vector<Ident>& args, ExprBlock* body);
+	ExprFn* createExprFn(TypeId ty, const vector<Ident>& args, ExprBlock* body);
 	ExprIf* createExprIf(Expr* test, Expr* con, Expr* alt);
 	ExprIdent* createExprIdent(Ident id);
 	ExprLiteralBasic* createExprLiteralBasic(StrId str_id);

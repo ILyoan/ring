@@ -42,7 +42,7 @@ llvm::Module* TransIR::transModule(ast::Module* module) {
 
 // Translate use.
 llvm::Value* TransIR::transUse(ast::Use* use) {
-	FATAL("Not implemented: %s", "transUse");
+	FATAL("Not implemented: transUse");
 }
 
 
@@ -53,9 +53,9 @@ llvm::Value* TransIR::transExtern(ast::Extern* ext) {
 	Symbol* symbol = session()->symbol_table()->value(ext->name().symbol_id());
 	ASSERT_EQ(symbol->llvm_val(), NULL, SRCPOS);
 	// According to its type...
-	if (session()->type_table()->isFuncType(ext->type_id())) {
-		llvm::FunctionType* ll_fn_type = transFunctionType(
-				session()->type_table()->getFuncType(ext->type_id()));
+	if (session()->type_table()->isFuncType(ext->ty())) {
+		llvm::FunctionType* ll_fn_type = transFuncType(
+				session()->type_table()->getFuncType(ext->ty()));
 		llvm::Function* ll_fn = llvm::Function::Create(
 				ll_fn_type,
 				llvm::Function::ExternalLinkage,
@@ -85,7 +85,7 @@ llvm::Value* TransIR::transLet(ast::Let* let) {
 	Symbol* symbol = session()->symbol_table()->value(let->name().symbol_id());
 	ASSERT_EQ(symbol->llvm_val(), NULL, SRCPOS);
 	// According to its type...
-	if (session()->type_table()->isFuncType(let->type_id())) {
+	if (session()->type_table()->isFuncType(let->ty())) {
 		llvm::Function* ll_fn = transExprFn(static_cast<ast::ExprFn*>(let->expr()));
 		ASSERT_EQ(symbol->llvm_val(), ll_fn, SRCPOS);
 	} else {
@@ -192,9 +192,9 @@ llvm::Function* TransIR::transExprFn(ast::ExprFn* fn) {
 		name_id = static_cast<ast::Let*>(fn->parent())->name().name_id();
 	}
 	// Translate function prototype
-	ast::FunctionType* ast_fn_type = session()->type_table()->getFuncType(fn->type_id());
-	llvm::FunctionType* ll_fn_type = transFunctionType(ast_fn_type);
-	llvm::Function* ll_fn = transFunctionProto(ast_fn_type, fn->args(), name_id, true);
+	ast::TypeFunc* ast_fn_type = session()->type_table()->getFuncType(fn->ty());
+	llvm::FunctionType* ll_fn_type = transFuncType(ast_fn_type);
+	llvm::Function* ll_fn = transFuncProto(ast_fn_type, fn->args(), name_id, true);
 	// If this function is in a let binding, set symbol for it llvm value.
 	if (fn->parent()->isLet()) {
 		ast::Let* let = static_cast<ast::Let*>(fn->parent());
@@ -209,7 +209,7 @@ llvm::Function* TransIR::transExprFn(ast::ExprFn* fn) {
 	// Translate body of the function.
 	llvm::Value* ll_ret = transStmts(fn->body()->stmts());
 	// Return instruction.
-	if (session()->type_table()->getType(ast_fn_type->ret())->isNil()) {
+	if (session()->type_table()->getType(ast_fn_type->ty_ret())->isNil()) {
 		_builder.CreateRetVoid();
 	} else {
 		_builder.CreateRet(ll_ret);
@@ -286,11 +286,11 @@ llvm::Value* TransIR::transExprIdent(ast::ExprIdent* ident) {
 
 // Translate literal expression.
 llvm::Value* TransIR::transExprLiteral(ast::ExprLiteral* lit) {
-	Type* ty = session()->type_table()->getType(lit->type_id());
+	Type* ty = session()->type_table()->getType(lit->ty());
 	if (lit->isBasic()) {
 		ExprLiteralBasic* basic_lit = static_cast<ExprLiteralBasic*>(lit);
 		if (ty->isInt()) {
-			return getConstantInt(basic_lit->str_id());
+			return getConstInt(basic_lit->str_id());
 		}
 	} else if (lit->isArray()) {
 
@@ -301,7 +301,7 @@ llvm::Value* TransIR::transExprLiteral(ast::ExprLiteral* lit) {
 
 // Translate member exression.
 llvm::Value* TransIR::transExprMember(ast::ExprMember* member) {
-	FATAL("Not implemented: %s", "transExprMember");
+	FATAL("Not implemented: transExprMember");
 }
 
 
@@ -324,7 +324,7 @@ llvm::Value* TransIR::transExprCall(ast::ExprCall* call) {
 
 // Translate unary expression.
 llvm::Value* TransIR::transExprUnary(ast::ExprUnary* unary) {
-	FATAL("Not implemented: %s", "transExprUnary");
+	FATAL("Not implemented: transExprUnary");
 }
 
 
@@ -356,13 +356,13 @@ llvm::Value * TransIR::transExprBinary(ast::ExprBinary* bi) {
 
 // Translate logical expression.
 llvm::Value* TransIR::transExprLogical(ast::ExprLogical* logical) {
-	FATAL("Not implemented: %s", "transExprLogical");
+	FATAL("Not implemented: transExprLogical");
 }
 
 
 // Translate conditional expression.
-llvm::Value* TransIR::transExprConditional(ast::ExprConditional* cond) {
-	FATAL("Not implemented: %s", "transExprConditional");
+llvm::Value* TransIR::transExprConditional(ast::ExprConditional* conditional) {
+	FATAL("Not implemented: transExprConditional");
 }
 
 
@@ -376,58 +376,67 @@ llvm::Value* TransIR::transExprAssignment(ast::ExprAssignment* assign) {
 
 
 // Translate type.
-llvm::Type* TransIR::transType(TypeId type_id) {
-	Type* type = session()->type_table()->getType(type_id);
+llvm::Type* TransIR::transType(TypeId ty) {
+	Type* type = session()->type_table()->getType(ty);
 	if (type) {
 		return transType(type);
 	} else {
-		FATAL("Unknown type_id: %d", type_id);
+		FATAL("Unknown ty: %d", ty);
 	}
 }
 
 
 llvm::Type* TransIR::transType(ast::Type* type) {
 	ASSERT_NE(type, NULL, SRCPOS);
-	if (type->isPrimitiveType()) {
-		return transPrimitiveType(static_cast<ast::PrimitiveType*>(type));
-	} else {
-		return transFunctionType(static_cast<ast::FunctionType*>(type));
+	if (type->isPrimType()) {
+		return transPrimType(static_cast<ast::TypePrim*>(type));
+	} else if (type->isFuncType()) {
+		return transFuncType(static_cast<ast::TypeFunc*>(type));
+	} else if (type->isArrayType()) {
+		return transArrayType(static_cast<ast::TypeArray*>(type));
 	}
 }
 
 
 // Translate primitive type.
-llvm::Type* TransIR::transPrimitiveType(ast::PrimitiveType* prim_type) {
-	switch (prim_type->primitive_type()) {
+llvm::Type* TransIR::transPrimType(ast::TypePrim* prim_type) {
+	switch (prim_type->prim_type()) {
 		case ast::PRIM_TYPE_NIL: return _builder.getVoidTy();
 		case ast::PRIM_TYPE_INT: return _builder.getInt32Ty();
 		case ast::PRIM_TYPE_BOOL: return _builder.getInt32Ty();
 	}
-	FATAL("Unknown primitive type: %d", prim_type->primitive_type());
+	FATAL("Unknown primitive type: %d", prim_type->prim_type());
 }
 
 
 // Translate function type.
-llvm::FunctionType* TransIR::transFunctionType(ast::FunctionType* fn_type) {
+llvm::FunctionType* TransIR::transFuncType(ast::TypeFunc* fn_type) {
 	vector<llvm::Type*> params;
-	for_each(fn_type->args().begin(), fn_type->args().end(), [this, &params] (TypeId arg_type_id){
-		params.push_back(transType(session()->type_table()->getType(arg_type_id)));
+	for_each(fn_type->ty_args().begin(), fn_type->ty_args().end(), [this, &params] (TypeId ty_arg){
+		params.push_back(transType(session()->type_table()->getType(ty_arg)));
 	});
 	return llvm::FunctionType::get(
-			transType(session()->type_table()->getType(fn_type->ret())),
+			transType(session()->type_table()->getType(fn_type->ty_ret())),
 			params,
 			false);
 }
 
 
+// Translate array type.
+llvm::Type* TransIR::transArrayType(ast::TypeArray* arr_type) {
+	FATAL("Not implemented: transArrayType");
+	return NULL;
+}
+
+
 // Translate function prototype.
-llvm::Function* TransIR::transFunctionProto(
-		ast::FunctionType* fn_type,
+llvm::Function* TransIR::transFuncProto(
+		ast::TypeFunc* fn_type,
 		vector<Ident>& args,
 		NameId name_id,
 		bool is_external) {
 	// Create function.
-	llvm::FunctionType* ll_fn_type = transFunctionType(fn_type);
+	llvm::FunctionType* ll_fn_type = transFuncType(fn_type);
 	llvm::Function* ll_fn = llvm::Function::Create(
 			ll_fn_type,
 			llvm::Function::ExternalLinkage,
@@ -464,7 +473,7 @@ llvm::AllocaInst* TransIR::createEntryBlockAlloca(llvm::Function* ll_fn, SymbolI
 	llvm::BasicBlock* bb_entry = &ll_fn->getEntryBlock();
 	llvm::IRBuilder<> builder(bb_entry, bb_entry->begin());
 	llvm::AllocaInst* alloca = builder.CreateAlloca(
-			transType(symbol->type_id()), 0, session()->str(symbol->name_id()));
+			transType(symbol->ty()), 0, session()->str(symbol->name_id()));
 	// Set symbol alloca.
 	symbol->llvm_val(alloca);
 	return alloca;
@@ -489,14 +498,14 @@ void TransIR::CreateArgumentAllocas(ast::ExprFn* fn, llvm::Function* ll_fn) {
 
 
 // Create constant int value.
-llvm::Constant* TransIR::getConstantInt(int v, int bits, bool is_signed) {
+llvm::Constant* TransIR::getConstInt(int v, int bits, bool is_signed) {
 	LOG(LOG_DEBUG, "Trans constant int: value %d", v);
 	return llvm::ConstantInt::get(llvm::IntegerType::get(llvmContext(), bits),	v, is_signed);
 }
 
 
 // Create constant int value.
-llvm::Constant* TransIR::getConstantInt(StrId str_id, int bits, uint8_t radix) {
+llvm::Constant* TransIR::getConstInt(StrId str_id, int bits, uint8_t radix) {
 	LOG(LOG_DEBUG, "Trans constant int: value %s, str_id %d", session()->str(str_id).c_str(), str_id);
 	return llvm::ConstantInt::get(
 			llvm::IntegerType::get(llvmContext(), bits),
@@ -535,9 +544,9 @@ ExprValType TransIR::exprValType(Expr* expr) {
 			ExprIdent* ident = static_cast<ExprIdent*>(expr);
 			Symbol* symbol = session()->symbol_table()->value(ident->id().symbol_id());
 			ASSERT_NE(symbol, NULL, SRCPOS);
-			Type* type = session()->type_table()->getType(symbol->type_id());
+			Type* type = session()->type_table()->getType(symbol->ty());
 			ASSERT_NE(type, NULL, SRCPOS);
-			if (type->isFunctionType()) {
+			if (type->isFuncType()) {
 				return EXPR_VAL_TYPE_R;
 			} else {
 				return EXPR_VAL_TYPE_L;
